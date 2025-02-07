@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  public-api-scraper:
+    image: yesbhautik/public-api-scraper:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    restart: unless-stopped

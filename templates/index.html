@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>API Key Finder</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            input[type="text"] {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 10px;
+            }
+
+            #logs {
+                background: #f4f4f4;
+                padding: 10px;
+                border-radius: 4px;
+                height: 300px;
+                overflow-y: auto;
+                margin-top: 20px;
+            }
+
+            #results {
+                margin-top: 20px;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <h1>API Key Finder</h1>
+        <form id="searchForm">
+            <div class="form-group">
+                <label for="model">Model:</label>
+                <input type="text" id="model" name="model" placeholder="e.g. gpt-4o, deepseek-ai/deepseek-coder, etc."
+                    required>
+            </div>
+            <div class="form-group">
+                <label for="endpoint">Endpoint:</label>
+
+                <input type="text" id="endpoint" name="endpoint"
+                    placeholder="e.g. https://api.openai.com/v1/chat/completions" required>
+            </div>
+            <div class="form-group">
+                <label for="keyword">Search Keyword:</label>
+                <input type="text" id="keyword" name="keyword" placeholder="e.g. openai_api, anthropic_api_key, etc."
+                    required>
+            </div>
+            <button type="submit">Start Search</button>
+        </form>
+        <div id="logs"></div>
+        <div id="results"></div>
+
+        <script>
+            const form = document.getElementById('searchForm');
+            const logs = document.getElementById('logs');
+            const results = document.getElementById('results');
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                logs.innerHTML = '';
+                results.innerHTML = '';
+
+                const formData = new FormData(form);
+                const searchData = {
+                    model: formData.get('model'),
+                    endpoint: formData.get('endpoint'),
+                    keyword: formData.get('keyword')
+                };
+
+                // Connect to WebSocket
+                const ws = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/ws`);
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'log') {
+                        logs.innerHTML += `<div>${data.message}</div>`;
+                        logs.scrollTop = logs.scrollHeight;
+                    } else if (data.type === 'result') {
+                        results.innerHTML += `
+                            <div class="result-item" style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <div><strong>API Key:</strong> ${data.api}</div>
+                                <div><strong>Details:</strong> ${data.message}</div>
+                            </div>
+                        `;
+                    }
+                };
+
+                ws.onopen = () => {
+                    ws.send(JSON.stringify(searchData));
+                };
+            };
+        </script>
+    </body>
+
+</html>
